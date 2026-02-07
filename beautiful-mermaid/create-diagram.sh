@@ -14,7 +14,7 @@ set -e
 DIAGRAM_CODE="$1"
 TITLE="$2"
 OUTPUT_NAME="$3"
-THEME="${4:-github-dark}"
+THEME="${4:-github-light}"
 
 # Validate required arguments
 if [ -z "$DIAGRAM_CODE" ] || [ -z "$TITLE" ] || [ -z "$OUTPUT_NAME" ]; then
@@ -39,7 +39,7 @@ echo "Creating diagram: $TITLE"
 node /home/claude/beautiful-mermaid-render.mjs "$DIAGRAM_CODE" "$THEME" "svg" > /tmp/diagram-temp.svg
 
 # Step 2: Modify SVG for proper theme colors and bold text
-sed -i 's/--bg:#FFFFFF/--bg:#0d1117/g; s/--fg:#27272A/--fg:#e6edf3/g; s/--_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));/--_inner-stroke:  #8c959f;/g' /tmp/diagram-temp.svg
+sed -i 's/--_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));/--_inner-stroke:  #8c959f;/g' /tmp/diagram-temp.svg
 sed -i '/<\/style>/i\  text[font-weight="400"] {\n    font-weight: 600;\n  }' /tmp/diagram-temp.svg
 
 # Step 3: Copy template as base

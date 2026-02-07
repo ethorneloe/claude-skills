@@ -104,7 +104,7 @@ cp /home/claude/diagram.html /mnt/user-data/outputs/your-diagram-name.html
 The `template.html` file contains a **complete, production-ready** HTML page with:
 
 ✅ All required CSS for maximize, zoom, pan, drag
-✅ Theme switching (2 themes: GitHub Light, GitHub Dark)
+✅ Theme switching (2 themes: GitHub Light, GitHub Dark) — full-page: body, controls, and container all adapt
 ✅ Zoom slider (10%-300%)
 ✅ Maximize button (works without browser permissions)
 ✅ Mouse wheel zoom (Ctrl+scroll)
@@ -131,7 +131,7 @@ When using the template, you only need to modify:
 
 3. **SVG CSS Properties** (ensure these are set in the SVG):
    ```html
-   <svg ... style="--bg:#0d1117;--fg:#e6edf3;--line:#6e7781;--accent:#58a6ff;background:var(--bg)">
+   <svg ... style="--bg:#ffffff;--fg:#1f2328;--line:#6e7781;--accent:#6e7781;background:var(--bg)">
    ```
 
 4. **SVG Internal Styles** (add these inside `<style>` tag in SVG):
@@ -198,7 +198,7 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
 **Optional Enrichments:**
 ```css
 --line: #3d59a1    /* Edge/connector color */
---accent: #7aa2f7  /* Arrow heads, highlights */
+--accent: #6e7781  /* Arrow heads, highlights (gray, not blue) */
 --muted: #565f89   /* Secondary text, labels */
 ```
 
@@ -252,15 +252,13 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
 **Before creating a complex diagram, ask: "Can I split this into 2-3 simpler diagrams?"**
 
 ### Theme Selection
-- **github-light** - Default for most technical diagrams
-- **github-dark** - Clean, familiar to developers
-- **tokyo-night** - Versatile, professional
-- **dracula** - Vibrant, high contrast
-- **catppuccin-mocha** - Rich, elegant
+- **github-light** - Default theme for all diagrams
+- **github-dark** - Full-page dark mode (body, controls, and container all adapt)
 
 ### Styling Consistency
 - **NO custom style directives** in Mermaid code
 - Let beautiful-mermaid's theme system handle all colors
+- Preserve the diagram's native node colors — do not override unless the user requests it
 - Uniform appearance across all nodes
 - Professional, consistent aesthetic
 
