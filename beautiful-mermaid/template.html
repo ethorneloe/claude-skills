@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagram Title</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            background: #fafafa;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        body.maximized {
+            overflow: hidden;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0 0 24px 0;
+            text-align: center;
+        }
+        
+        .controls-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 24px;
+            transition: opacity 0.3s ease;
+        }
+        
+        .controls-wrapper.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .controls-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #525252;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .theme-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .theme-btn {
+            padding: 10px 18px;
+            border: 1px solid #d4d4d4;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: #404040;
+        }
+        
+        .theme-btn:hover {
+            background: #f5f5f5;
+            border-color: #a3a3a3;
+        }
+        
+        .theme-btn.active {
+            background: #1a1a1a;
+            color: white;
+            border-color: #1a1a1a;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #e5e5e5;
+            flex-wrap: wrap;
+        }
+        
+        .zoom-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #404040;
+            min-width: 60px;
+        }
+        
+        .zoom-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e5e5;
+            outline: none;
+            min-width: 200px;
+        }
+        
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .zoom-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .zoom-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            min-width: 50px;
+            text-align: right;
+        }
+        
+        .reset-btn, .maximize-btn {
+            padding: 8px 16px;
+            border: 1px solid #d4d4d4;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: #404040;
+        }
+        
+        .reset-btn:hover, .maximize-btn:hover {
+            background: #f5f5f5;
+            border-color: #a3a3a3;
+        }
+        
+        .maximize-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .diagram-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            overflow: auto;
+            cursor: grab;
+            width: 100%;
+            max-width: 1200px;
+            flex: 1;
+            min-height: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .diagram-container.maximized {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            max-height: 100vh;
+            border-radius: 0;
+            z-index: 9999;
+            margin: 0;
+            padding: 60px 40px 40px 40px;
+        }
+        
+        .diagram-container:active {
+            cursor: grabbing;
+        }
+        
+        .diagram-container svg {
+            transition: transform 0.2s ease;
+            transform-origin: top left;
+            display: block;
+        }
+        
+        .close-maximize {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 10000;
+            padding: 10px 20px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .close-maximize.visible {
+            display: block;
+        }
+        
+        .close-maximize:hover {
+            background: #2a2a2a;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            h1 {
+                font-size: 20px;
+                margin-bottom: 16px;
+            }
+            
+            .diagram-container {
+                padding: 20px;
+            }
+            
+            .zoom-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .zoom-slider {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Diagram Title</h1>
+    
+    <div class="controls-wrapper" id="controls">
+        <div class="controls-section">
+            <div class="controls-label">Theme</div>
+            <div class="theme-controls">
+                <button class="theme-btn" onclick="setTheme('github-light')">Light</button>
+                <button class="theme-btn active" onclick="setTheme('github-dark')">Dark</button>
+            </div>
+        </div>
+        
+        <div class="controls-section">
+            <div class="controls-label">Zoom & View</div>
+            <div class="zoom-controls">
+                <span class="zoom-label">Zoom:</span>
+                <input type="range" class="zoom-slider" id="zoomSlider" min="10" max="300" value="100" step="10">
+                <span class="zoom-value" id="zoomValue">100%</span>
+                <button class="reset-btn" onclick="resetZoom()">Reset</button>
+                <button class="maximize-btn" onclick="toggleMaximize()">
+                    <span>⛶</span> Maximize
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <button class="close-maximize" id="closeBtn" onclick="toggleMaximize()">
+        ✕ Close Maximize
+    </button>
+    
+    <div class="diagram-container" id="diagramContainer">
+        <!-- INSERT_SVG_HERE -->
+        <!-- 
+        IMPORTANT: Replace this comment with your rendered SVG content.
+        
+        The SVG MUST include these CSS custom properties in its style attribute:
+        style="--bg:#0d1117;--fg:#e6edf3;--line:#6e7781;--accent:#58a6ff;background:var(--bg)"
+        
+        The SVG MUST include these styles inside its <style> tag:
+        <style>
+          svg {
+            --_inner-stroke: #8c959f;  /* Visible borders for small labels */
+          }
+          text[font-weight="400"] {
+            font-weight: 600;  /* Bold text for readability */
+          }
+        </style>
+        -->
+    </div>
+    
+    <script>
+        const themes = {
+            'github-light': { bg: '#ffffff', fg: '#1f2328', line: '#6e7781', accent: '#0969da' },
+            'github-dark': { bg: '#0d1117', fg: '#e6edf3', line: '#6e7781', accent: '#58a6ff' }
+        };
+        
+        let currentTheme = 'github-dark';
+        
+        function setTheme(themeName) {
+            const theme = themes[themeName];
+            const svg = document.querySelector('svg');
+            
+            if (svg && theme) {
+                svg.style.setProperty('--bg', theme.bg);
+                svg.style.setProperty('--fg', theme.fg);
+                svg.style.setProperty('--line', theme.line);
+                svg.style.setProperty('--accent', theme.accent);
+                
+                // Update active button
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+                
+                currentTheme = themeName;
+            }
+        }
+        
+        // Zoom functionality
+        const slider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+        const container = document.getElementById('diagramContainer');
+        const svg = document.querySelector('svg');
+        
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX, startY;
+        
+        function updateTransform() {
+            if (svg) {
+                svg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            }
+        }
+        
+        function handleZoomSlider(value) {
+            scale = value / 100;
+            zoomValue.textContent = value + '%';
+            updateTransform();
+        }
+        
+        slider.addEventListener('input', (e) => {
+            handleZoomSlider(e.target.value);
+        });
+        
+        function resetZoom() {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            slider.value = 100;
+            zoomValue.textContent = '100%';
+            updateTransform();
+        }
+        
+        // Pan and drag functionality
+        container.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateTransform();
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        // Mouse wheel zoom
+        container.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                
+                const delta = -Math.sign(e.deltaY);
+                let newValue = parseInt(slider.value) + (delta * 10);
+                newValue = Math.max(10, Math.min(300, newValue));
+                
+                slider.value = newValue;
+                handleZoomSlider(newValue);
+            }
+        }, { passive: false });
+        
+        // Maximize functionality (no browser permissions needed)
+        function toggleMaximize() {
+            const controls = document.getElementById('controls');
+            const closeBtn = document.getElementById('closeBtn');
+            const body = document.body;
+            
+            container.classList.toggle('maximized');
+            controls.classList.toggle('hidden');
+            closeBtn.classList.toggle('visible');
+            body.classList.toggle('maximized');
+        }
+        
+        // ESC key to close maximize
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && container.classList.contains('maximized')) {
+                toggleMaximize();
+            }
+        });
+    </script>
+</body>
+</html>
