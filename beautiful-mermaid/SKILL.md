@@ -256,12 +256,38 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
 - **github-light** - Default theme for all diagrams
 - **github-dark** - Full-page dark mode (body, controls, and container all adapt)
 
-### Styling Consistency
-- **NO custom style directives** in Mermaid code
-- Let beautiful-mermaid's theme system handle all colors
-- Preserve the diagram's native node colors — do not override unless the user requests it
-- Uniform appearance across all nodes
-- Professional, consistent aesthetic
+### Styling Consistency (CRITICAL — NO CUSTOM COLORS)
+
+**ALL node colors are controlled by the beautiful-mermaid theme system via CSS custom properties. NEVER override them.**
+
+**BANNED Mermaid syntax — do NOT use any of these:**
+- `style NodeName fill:#color,stroke:#color` — banned
+- `classDef className fill:#color` — banned
+- `class NodeA,NodeB className` — banned
+- `:::className` — banned
+- Any inline `fill:`, `stroke:`, `color:`, or `background:` on nodes — banned
+
+**Why:** Custom colors (green, red, blue, orange, etc.) break theme switching, look inconsistent, and create visual noise. The theme system automatically derives all node fills, strokes, and text colors from `--bg` and `--fg`. This gives a uniform, professional look that adapts to both Light and Dark themes.
+
+**If the user asks for colored nodes:** Only then may you use `classDef`/`style`, and explain that custom colors will not adapt to theme switching.
+
+**Correct approach — let the theme handle everything:**
+```mermaid
+flowchart TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Success]
+    B -->|No| D[Failure]
+```
+
+**Wrong approach — never do this unless explicitly asked:**
+```mermaid
+flowchart TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Success]
+    B -->|No| D[Failure]
+    style C fill:#22c55e,color:#fff
+    style D fill:#ef4444,color:#fff
+```
 
 ### Color Contrast Requirements
 - Small label boxes (Yes/No, Valid/Invalid) need darker borders for visibility
@@ -273,7 +299,22 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
 
 ## Common Anti-Patterns to AVOID
 
-### ❌ ANTI-PATTERN 1: Using HTML Tags in Labels
+### ❌ ANTI-PATTERN 1: Custom Colors on Nodes
+**NEVER use `style`, `classDef`, `class`, or `:::` to set custom colors on nodes.** The theme system controls all colors. Custom fills (green, red, blue, orange) break theme switching and look inconsistent.
+
+```mermaid
+# ❌ WRONG - Custom colors
+flowchart TD
+    A[OK] --> B[Error]
+    style A fill:#22c55e,color:#fff
+    style B fill:#ef4444,color:#fff
+
+# ✅ CORRECT - Let the theme handle it
+flowchart TD
+    A[OK] --> B[Error]
+```
+
+### ❌ ANTI-PATTERN 2: Using HTML Tags in Labels
 **NEVER use HTML tags (like line break tags) in node labels** - they render as literal escaped text.
 Always use short, single-line labels instead.
 
@@ -284,7 +325,7 @@ flowchart TD
     Store[Store Certificate]
 ```
 
-### ❌ ANTI-PATTERN 2: Redundant Status Nodes
+### ❌ ANTI-PATTERN 3: Redundant Status Nodes
 Creates unnecessary boxes and extra lines.
 
 ```mermaid
@@ -298,7 +339,7 @@ Register → Auth{OK?}
 Auth -->|No| Retry{Retry?}
 ```
 
-### ❌ ANTI-PATTERN 3: Overlapping Loops
+### ❌ ANTI-PATTERN 4: Overlapping Loops
 Multiple paths to same node create visual spaghetti.
 
 ```mermaid
@@ -311,7 +352,7 @@ Install → Register
 Retry{Retry?} -->|Yes| Install
 ```
 
-### ❌ ANTI-PATTERN 4: Long Labels
+### ❌ ANTI-PATTERN 5: Long Labels
 Creates wide nodes and forces lines to cross.
 
 ```mermaid
@@ -424,7 +465,7 @@ Before presenting diagram, verify ALL requirements are met:
 - [ ] Small labels have **bold text** (font-weight: 600)
 - [ ] Lines and arrows are **gray**, not blue
 - [ ] Arrow colors match line colors for consistency
-- [ ] No custom style directives in Mermaid code
+- [ ] **CRITICAL**: No `style`, `classDef`, `class`, or `:::` in Mermaid code — theme controls all colors
 - [ ] Theme matches context/user preference
 - [ ] File saved to `/mnt/user-data/outputs/`
 - [ ] HTML renders correctly in browser
