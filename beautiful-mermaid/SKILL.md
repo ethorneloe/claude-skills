@@ -1,6 +1,6 @@
 ---
 name: beautiful-mermaid
-version: "8.0"
+version: "8.1"
 description: Create diagrams using the actual beautiful-mermaid library with CSS custom properties, live theme switching, and dual SVG/ASCII output
 ---
 

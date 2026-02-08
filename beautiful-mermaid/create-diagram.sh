@@ -27,6 +27,12 @@ if [ -z "$DIAGRAM_CODE" ] || [ -z "$TITLE" ] || [ -z "$OUTPUT_NAME" ]; then
     exit 1
 fi
 
+# Validate OUTPUT_NAME contains only safe characters (prevent path traversal)
+if ! echo "$OUTPUT_NAME" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+    echo "Error: OUTPUT_NAME must contain only alphanumeric characters, dashes, and underscores"
+    exit 1
+fi
+
 # Ensure setup is complete
 if [ ! -f /home/claude/beautiful-mermaid-render.mjs ] || [ ! -d /home/claude/node_modules/beautiful-mermaid ]; then
     echo "Running setup..."
