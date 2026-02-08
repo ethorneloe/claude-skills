@@ -44,7 +44,7 @@ jobs:
         env:
           SKILL_DIR: ${{ matrix.skill }}
         run: |
-          version=$(grep '^version:' "$SKILL_DIR/SKILL.md" | head -1 | sed 's/version:[[:space:]]*//' | tr -d '"')
+          version=$(tr -d '[:space:]' < "$SKILL_DIR/version.txt")
           name=$(grep '^name:' "$SKILL_DIR/SKILL.md" | head -1 | sed 's/name:[[:space:]]*//' | tr -d '"')
 
           # Validate format
