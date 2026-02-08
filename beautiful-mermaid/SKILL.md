@@ -225,7 +225,7 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
 
 ### Avoiding Line Clutter (CRITICAL)
 
-**Line clutter** is the #1 diagram quality issue. Follow these rules:
+**The goal is clarity and symmetry.** Every line should be easy to follow, flowing cleanly downward (or left-to-right). Loops are perfectly fine when the process requires them — the problem is *redundant* lines or edges that cross over unrelated nodes and create visual noise.
 
 1. **Shorten ALL node labels**:
    - BAD: Long multi-word labels or labels with HTML tags
@@ -233,21 +233,43 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
    - Target: Under 20 characters per label
 
 2. **Eliminate redundant nodes**:
-   - BAD: `Register → Auth → Fail → Retry? → Yes → Register` (creates loop)
-   - GOOD: `Register → Auth → Fail/Success` (clean split)
+   - BAD: `Register → Auth → Fail → Retry? → Yes → Register` (unnecessary extra node)
+   - GOOD: `Register → Auth{OK?} -->|No| Register` (clean loop back)
 
 3. **Consolidate decision points**:
    - If multiple decisions lead to same outcome, combine them
    - Avoid cascading decisions that could be one check
 
-4. **Minimize feedback loops**:
-   - Keep loops short (3-4 nodes maximum)
-   - Don't create loops that span entire diagram
-   - Avoid multiple paths returning to same node
+4. **Keep loops clean and symmetric**:
+   - Loops are fine and expected — but they must be visually clean
+   - Loop edges should run along the side of the diagram, not through the middle
+   - Keep loops short (loop back 1-3 nodes, not across the entire diagram)
+   - If a loop would cross many nodes, introduce a nearby "Retry" node instead
 
 5. **Remove intermediate "status" nodes**:
    - BAD: `Auth Failed → Registration Failed → Retry?`
    - GOOD: `Auth Failed → Retry?`
+
+6. **Decision splits must be symmetric**:
+   - Define both branches of a decision immediately after the decision node (back-to-back)
+   - This makes the layout engine place children side-by-side with clean L-shaped (right-angle) connectors
+   - Every edge should connect to the center of its target node
+   - Keep both branches similar depth before they reconverge
+
+7. **Every edge should be clearly traceable**:
+   - The primary flow goes straight down (TD) or straight right (LR)
+   - Branch edges ("No" paths, error paths) should route cleanly to the side
+   - No edge should cross over another edge or through an unrelated node
+   - If you can't trace every arrow with your finger without crossing another, restructure
+
+8. **Limit connections per node**:
+   - Max 2-3 edges from any single node
+   - If a decision has 4+ outcomes, split into cascading decisions
+   - Avoid "star" topologies where one node fans out to many destinations
+
+9. **Consider `flowchart LR` for branchy diagrams**:
+   - Top-down (TD) is best for linear flows with few branches
+   - Left-right (LR) handles parallel branches better with less crossing
 
 **Before creating a complex diagram, ask: "Can I split this into 2-3 simpler diagrams?"**
 
@@ -364,10 +386,108 @@ Creates wide nodes and forces lines to cross.
 {Auth OK?}
 ```
 
+### ❌ ANTI-PATTERN 6: Edges that Cross Through Other Nodes
+Loops are fine — but an edge that cuts through unrelated nodes creates visual noise. The layout engine draws ugly overlapping lines when edges have to cross the main flow.
+
+```mermaid
+# ❌ WRONG - Two separate backward edges both cross through the main flow
+flowchart TD
+    A[Step 1] --> B{Check?}
+    B -->|Yes| C[Step 2]
+    B -->|No| D[Wait]
+    D --> A
+    C --> E{Another?}
+    E -->|Yes| F[Done]
+    E -->|No| A
+
+# ✅ CORRECT - Loop edges share a clean path along the side
+flowchart TD
+    A[Step 1] --> B{Check?}
+    B -->|Yes| C[Step 2] --> D{Another?}
+    D -->|Yes| E[Done]
+    B -->|No| F[Wait] --> A
+    D -->|No| F
+```
+
+**Key rules for clean edges:**
+1. **Primary flow goes straight down** — the happy path should be a clean vertical (or horizontal) line with no crossings.
+2. **Decision splits must be symmetric** — define both branches immediately after the decision node so the layout engine places children side-by-side with clean L-shaped (right-angle) connectors. Every edge should hit the center of its target node.
+3. **Branch/loop edges route to the side** — "No" paths and loops should run along the edge of the diagram, not through the middle.
+4. **Share loop-back nodes** — if multiple branches need to loop back, route them through a single shared node so there's one clean return path, not multiple crossing ones.
+5. **Limit edges per node to 2-3** — if a node needs 4+ connections, break the diagram into subdiagrams.
+6. **Keep loops short** — a loop from node 8 back to node 1 will cross every node between them. Loop back 1-3 nodes, or introduce a nearby "Retry" node.
+7. **Use `flowchart LR`** for diagrams with many parallel branches (reduces vertical crossing).
+
+### ❌ ANTI-PATTERN 7: Star Topology from Decision Nodes
+Multiple edges radiating from one node in different directions causes the layout engine to create crossing paths.
+
+```mermaid
+# ❌ WRONG - Star pattern: one node connects to many distant nodes
+flowchart TD
+    Start --> A --> B{Route?}
+    B -->|1| C[Path 1]
+    B -->|2| D[Path 2]
+    B -->|3| E[Path 3]
+    B -->|4| F[Path 4]
+    C --> End
+    D --> End
+    E --> End
+    F --> End
+
+# ✅ CORRECT - Sequential decisions or grouped paths
+flowchart TD
+    Start --> A --> B{Type?}
+    B -->|Fast| C[Path 1] --> End[Done]
+    B -->|Slow| D{Subtype?}
+    D -->|A| E[Path 2] --> End
+    D -->|B| F[Path 3] --> End
+```
+
+### ✅ CORRECT PATTERN: Symmetric Decision Splits
+
+When a decision diamond splits into two (or three) paths, the child nodes should sit **symmetrically beneath the diamond** with clean L-shaped edges — straight down from the diamond, then turning to connect to each child's center. This is the natural rendering when you:
+
+1. **Define both branches immediately after the decision node** — the layout engine places them side-by-side
+2. **Keep branch labels short and similar length** — keeps the split visually balanced
+3. **Make both branches the same depth** before they reconverge — avoids lopsided layouts
+
+```mermaid
+# ✅ CORRECT - Symmetric split, both branches defined together
+flowchart TD
+    A[Choose Method] --> B{Quick?}
+    B -->|Yes| C[Use Yeast]
+    B -->|No| D[Starter Bug]
+    C --> E[Ferment]
+    D --> E
+```
+
+The layout engine draws right-angle (L-shaped) connectors from the diamond to each child — this is the desired look. The key is defining both branches back-to-back so the engine lays them out symmetrically.
+
+```mermaid
+# ❌ WRONG - Branches defined far apart, other nodes in between
+flowchart TD
+    A{Quick?}
+    A -->|Yes| B[Use Yeast]
+    B --> C[Ferment]
+    C --> D[Done]
+    A -->|No| E[Starter Bug]
+    E --> F[Wait 5-7 days]
+    F --> C
+
+# ✅ CORRECT - Both branches defined together, clean symmetric L-splits
+flowchart TD
+    A{Quick?}
+    A -->|Yes| B[Use Yeast]
+    A -->|No| C[Starter Bug]
+    B --> D[Ferment]
+    C --> E[Wait 5-7 days] --> D
+    D --> F[Done]
+```
+
 ### ✅ CORRECT PATTERN: Clean Flow
 - Short labels (< 20 chars)
 - No HTML tags in labels
-- Minimal loops
+- Symmetric decision splits with L-shaped edges
 - Direct paths
 - No redundant nodes
 
@@ -468,8 +588,11 @@ Before presenting diagram, verify ALL requirements are met:
 - [ ] Theme matches context/user preference
 - [ ] File saved to `/mnt/user-data/outputs/`
 - [ ] HTML renders correctly in browser
-- [ ] **Visual check**: No overlapping or crossing lines
-- [ ] **Visual check**: Diagram is easy to follow left-to-right or top-to-bottom
+- [ ] **Visual check**: Every line is clearly traceable — no edge crosses through an unrelated node
+- [ ] **Visual check**: Primary flow is a clean straight path downward (or left-to-right)
+- [ ] **Visual check**: Loops and branches route cleanly to the side, not through the middle
+- [ ] **Visual check**: No node has more than 3 outgoing edges
+- [ ] **Visual check**: Diagram has clear symmetry and is easy to follow
 
 **If any checkbox is unchecked, the artifact is incomplete and must be updated.**
 
@@ -494,9 +617,13 @@ Before presenting diagram, verify ALL requirements are met:
 **Diagram has overlapping/crossing lines:**
 - Shorten all node labels (under 20 chars)
 - Remove redundant intermediate nodes
-- Simplify feedback loops
 - Split complex diagram into multiple simpler ones
-- Eliminate retry/loop mechanisms that create redundant paths
+- **Check that the primary flow is a clean straight line** — happy path should go straight down without crossings
+- **Route loops and branches to the side** — "No" edges and loops should not cut through the main flow
+- **Share loop-back nodes** — if multiple branches loop back, route through one shared node instead of separate crossing edges
+- **Limit outgoing edges per node to 2-3** — split star topologies into cascading decisions
+- **Keep loops short** — loop back 1-3 nodes max; for longer loops, add a nearby "Retry" node
+- **Try `flowchart LR`** if a TD layout has many crossing branches
 
 **Theme switching not working:**
 - Ensure SVG has CSS custom properties in style attribute
@@ -521,6 +648,7 @@ Track improvements to ensure all artifacts stay current:
 **RECOMMENDED: Use optimized workflow (create-diagram.sh)**
 
 **Features that MUST be in every artifact:**
+- ✅ **Edge routing rules** — all edges flow one direction, no crossing, max 2-3 edges per node
 - ✅ **No custom colors** — `style`, `classDef`, `class`, `:::` are banned unless user requests
 - ✅ **Optimized single-script workflow** (create-diagram.sh) - 3-4x faster
 - ✅ **Performance improvement**: 2 tool calls instead of 7+
@@ -545,7 +673,18 @@ Track improvements to ensure all artifacts stay current:
 
 ### Iteration History
 
-**v8 - Color Consistency (Current)**
+**v8.3 - Clean Edge Routing (Current)**
+- Added Anti-Pattern 6: Edges that Cross Through Other Nodes
+- Added Anti-Pattern 7: Star Topology from Decision Nodes
+- Added Correct Pattern: Symmetric Decision Splits with L-shaped connectors
+- Decision branches must be defined back-to-back for symmetric layout
+- Clarity over avoidance: loops are fine, crossing edges are not
+- Primary flow must be a clean straight path; loops route to the side
+- Added guidance on `flowchart LR` vs `TD` for branchy diagrams
+- Strengthened "Avoiding Line Clutter" with rules 6-9
+- Updated quality checklist: symmetry, traceability, clean routing
+
+**v8 - Color Consistency**
 - Banned `style`, `classDef`, `class`, `:::` in Mermaid code
 - Theme system controls all node colors — no custom fills allowed
 - Added Anti-Pattern 1: Custom Colors on Nodes

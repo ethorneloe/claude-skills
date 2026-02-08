@@ -203,8 +203,11 @@
             left: 0;
             width: 100vw;
             height: 100vh;
+            max-width: 100vw;
             max-height: 100vh;
             border-radius: 0;
+            border: none;
+            box-shadow: none;
             z-index: 9999;
             margin: 0;
             padding: 60px 40px 40px 40px;
@@ -469,15 +472,59 @@
         }, { passive: false });
         
         // Maximize functionality (no browser permissions needed)
+        let preMaxScale = 1;
+        let preMaxTranslateX = 0;
+        let preMaxTranslateY = 0;
+
+        function fitToContainer() {
+            if (!svg) return;
+            const svgRect = svg.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const padX = 80, padY = 100;
+            const availW = containerRect.width - padX;
+            const availH = containerRect.height - padY;
+            // Use natural SVG size (at scale=1)
+            const natW = svgRect.width / scale;
+            const natH = svgRect.height / scale;
+            if (natW === 0 || natH === 0) return;
+            const fitScale = Math.min(availW / natW, availH / natH, 3);
+            scale = fitScale;
+            translateX = 0;
+            translateY = 0;
+            slider.value = Math.round(fitScale * 100);
+            zoomValue.textContent = Math.round(fitScale * 100) + '%';
+            updateTransform();
+        }
+
         function toggleMaximize() {
             const controls = document.getElementById('controls');
             const closeBtn = document.getElementById('closeBtn');
             const body = document.body;
-            
+            const entering = !container.classList.contains('maximized');
+
+            if (entering) {
+                preMaxScale = scale;
+                preMaxTranslateX = translateX;
+                preMaxTranslateY = translateY;
+            }
+
             container.classList.toggle('maximized');
             controls.classList.toggle('hidden');
             closeBtn.classList.toggle('visible');
             body.classList.toggle('maximized');
+
+            if (entering) {
+                // Delay to let the CSS transition settle
+                requestAnimationFrame(() => fitToContainer());
+            } else {
+                // Restore previous zoom/pan state
+                scale = preMaxScale;
+                translateX = preMaxTranslateX;
+                translateY = preMaxTranslateY;
+                slider.value = Math.round(scale * 100);
+                zoomValue.textContent = Math.round(scale * 100) + '%';
+                updateTransform();
+            }
         }
         
         // ESC key to close maximize
