@@ -1,6 +1,6 @@
 ---
 name: beautiful-mermaid
-version: "7.0"
+version: "8.0"
 description: Create diagrams using the actual beautiful-mermaid library with CSS custom properties, live theme switching, and dual SVG/ASCII output
 ---
 
@@ -518,10 +518,11 @@ Before presenting diagram, verify ALL requirements are met:
 
 Track improvements to ensure all artifacts stay current:
 
-### Latest Version (Current) - v7
+### Latest Version (Current) - v8
 **RECOMMENDED: Use optimized workflow (create-diagram.sh)**
 
 **Features that MUST be in every artifact:**
+- ✅ **No custom colors** — `style`, `classDef`, `class`, `:::` are banned unless user requests
 - ✅ **Optimized single-script workflow** (create-diagram.sh) - 3-4x faster
 - ✅ **Performance improvement**: 2 tool calls instead of 7+
 - ✅ Skill packaged as .zip with separate files
@@ -545,7 +546,14 @@ Track improvements to ensure all artifacts stay current:
 
 ### Iteration History
 
-**v7 - Optimized Workflow (Current)**
+**v8 - Color Consistency (Current)**
+- Banned `style`, `classDef`, `class`, `:::` in Mermaid code
+- Theme system controls all node colors — no custom fills allowed
+- Added Anti-Pattern 1: Custom Colors on Nodes
+- Updated quality checklist with color enforcement
+- Only user-requested custom colors are permitted
+
+**v7 - Optimized Workflow**
 - Added create-diagram.sh script for optimized performance
 - Single-command diagram creation (3-4x faster)
 - Reduced from 7+ tool calls to 2 tool calls
