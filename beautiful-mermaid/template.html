@@ -153,7 +153,7 @@
             text-align: right;
         }
         
-        .reset-btn, .maximize-btn {
+        .reset-btn, .maximize-btn, .download-btn {
             padding: 8px 16px;
             border: 1px solid #d4d4d4;
             border-radius: 6px;
@@ -164,16 +164,22 @@
             transition: all 0.2s;
             color: #404040;
         }
-        
-        .reset-btn:hover, .maximize-btn:hover {
+
+        .reset-btn:hover, .maximize-btn:hover, .download-btn:hover {
             background: #f5f5f5;
             border-color: #a3a3a3;
         }
-        
-        .maximize-btn {
+
+        .maximize-btn, .download-btn {
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
         }
         
         .diagram-container {
@@ -268,14 +274,19 @@
     <h1>Diagram Title</h1>
     
     <div class="controls-wrapper" id="controls">
-        <div class="controls-section">
-            <div class="controls-label">Theme</div>
-            <div class="theme-controls">
-                <button class="theme-btn active" onclick="setTheme('github-light')">Light</button>
-                <button class="theme-btn" onclick="setTheme('github-dark')">Dark</button>
+        <div class="top-row">
+            <div class="controls-section">
+                <div class="controls-label">Theme</div>
+                <div class="theme-controls">
+                    <button class="theme-btn active" onclick="setTheme('github-light')">Light</button>
+                    <button class="theme-btn" onclick="setTheme('github-dark')">Dark</button>
+                </div>
             </div>
+            <button class="download-btn" onclick="copySVG()">
+                <span>&#128203;</span> Copy SVG to Clipboard
+            </button>
         </div>
-        
+
         <div class="controls-section">
             <div class="controls-label">Zoom & View</div>
             <div class="zoom-controls">
@@ -376,7 +387,7 @@
                 event.target.style.color = 'white';
                 event.target.style.borderColor = '#1a1a1a';
 
-                document.querySelectorAll('.reset-btn, .maximize-btn').forEach(btn => {
+                document.querySelectorAll('.reset-btn, .maximize-btn, .download-btn').forEach(btn => {
                     btn.style.background = theme.controlsBg;
                     btn.style.color = theme.controlsText;
                     btn.style.borderColor = theme.btnBorder;
@@ -476,15 +487,43 @@
             }
         });
 
-        // Apply default theme to SVG on load
+        // Copy SVG source to clipboard
+        function copySVG() {
+            const svgEl = document.querySelector('svg');
+            const btn = document.querySelector('.download-btn');
+            if (!svgEl) return;
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgEl);
+            const ta = document.createElement('textarea');
+            ta.value = svgString;
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:fixed;left:-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span>&#10003;</span> Copied!';
+            setTimeout(() => { btn.innerHTML = original; }, 2000);
+        }
+
+        // Apply default theme and sanitize SVG on load
         window.addEventListener('DOMContentLoaded', () => {
             const svgEl = document.querySelector('svg');
-            const theme = themes[currentTheme];
-            if (svgEl && theme) {
-                svgEl.style.setProperty('--bg', theme.bg);
-                svgEl.style.setProperty('--fg', theme.fg);
-                svgEl.style.setProperty('--line', theme.line);
-                svgEl.style.setProperty('--accent', theme.accent);
+            if (svgEl) {
+                // Remove any escaped line break tags that render as literal text
+                svgEl.querySelectorAll('text, tspan').forEach(el => {
+                    el.textContent = el.textContent.replace(/<br\s*\/?>/gi, ' ').replace(/&lt;br\s*\/?&gt;/gi, ' ');
+                });
+
+                // Apply default theme
+                const theme = themes[currentTheme];
+                if (theme) {
+                    svgEl.style.setProperty('--bg', theme.bg);
+                    svgEl.style.setProperty('--fg', theme.fg);
+                    svgEl.style.setProperty('--line', theme.line);
+                    svgEl.style.setProperty('--accent', theme.accent);
+                }
             }
         });
     </script>

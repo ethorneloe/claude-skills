@@ -1,0 +1,70 @@
+name: Release Skills
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      skills: ${{ steps.find.outputs.skills }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Find changed skill directories
+        id: find
+        run: |
+          skills=$(git diff --name-only HEAD~1..HEAD \
+            | cut -d/ -f1 | sort -u \
+            | while read dir; do
+                [ -f "$dir/SKILL.md" ] && echo "$dir"
+              done \
+            | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "skills=$skills" >> "$GITHUB_OUTPUT"
+          echo "Changed skills: $skills"
+
+  release:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.skills != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        skill: ${{ fromJson(needs.detect-changes.outputs.skills) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read skill metadata
+        id: meta
+        run: |
+          version=$(grep '^version:' "${{ matrix.skill }}/SKILL.md" | head -1 | sed 's/version:[[:space:]]*//' | tr -d '"')
+          name=$(grep '^name:' "${{ matrix.skill }}/SKILL.md" | head -1 | sed 's/name:[[:space:]]*//' | tr -d '"')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "Releasing $name v$version"
+
+      - name: Create zip
+        run: |
+          cd "${{ matrix.skill }}"
+          zip -r "../${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}.zip" .
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.meta.outputs.name }}/v${{ steps.meta.outputs.version }}"
+          zip_file="${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}.zip"
+
+          # Delete existing release/tag if re-releasing same version
+          gh release delete "$tag" --yes 2>/dev/null || true
+          git push origin ":refs/tags/$tag" 2>/dev/null || true
+
+          gh release create "$tag" "$zip_file" \
+            --title "${{ steps.meta.outputs.name }} v${{ steps.meta.outputs.version }}" \
+            --notes "Release of **${{ steps.meta.outputs.name }}** skill package v${{ steps.meta.outputs.version }}." \
+            --latest

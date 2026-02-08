@@ -38,18 +38,21 @@ echo "Creating diagram: $TITLE"
 # Step 1: Render the SVG
 node /home/claude/beautiful-mermaid-render.mjs "$DIAGRAM_CODE" "$THEME" "svg" > /tmp/diagram-temp.svg
 
-# Step 2: Modify SVG for proper theme colors and bold text
+# Step 2: Sanitize SVG - remove any line break tags that render as literal text
+sed -i 's/<br\/>//g; s/<br>//g; s/<br \/>//g; s/&lt;br\/&gt;//g; s/&lt;br&gt;//g; s/&lt;br \/&gt;//g' /tmp/diagram-temp.svg
+
+# Step 3: Modify SVG for proper theme colors and bold text
 sed -i 's/--_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));/--_inner-stroke:  #8c959f;/g' /tmp/diagram-temp.svg
 sed -i '/<\/style>/i\  text[font-weight="400"] {\n    font-weight: 600;\n  }' /tmp/diagram-temp.svg
 
-# Step 3: Copy template as base
+# Step 4: Copy template as base
 cp /mnt/skills/user/beautiful-mermaid/template.html /tmp/output-temp.html
 
-# Step 4: Replace title and heading
+# Step 5: Replace title and heading
 sed -i "s|<title>Diagram Title</title>|<title>${TITLE}</title>|" /tmp/output-temp.html
 sed -i "s|<h1>Diagram Title</h1>|<h1>${TITLE}</h1>|" /tmp/output-temp.html
 
-# Step 5: Insert SVG content using awk
+# Step 6: Insert SVG content using awk
 awk '
 /<!-- INSERT_SVG_HERE -->/ {
     while (getline line < "/tmp/diagram-temp.svg") {

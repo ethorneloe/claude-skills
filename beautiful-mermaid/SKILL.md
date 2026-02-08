@@ -1,5 +1,6 @@
 ---
 name: beautiful-mermaid
+version: "7.0"
 description: Create diagrams using the actual beautiful-mermaid library with CSS custom properties, live theme switching, and dual SVG/ASCII output
 ---
 
@@ -220,7 +221,7 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
 - Use clear decision labels ("Yes"/"No", "Success"/"Fail")
 - Prefer top-down (TD) or left-right (LR) flow
 - Group related nodes with subgraphs
-- **NEVER use `<br/>` tags** - they render as literal text `&lt;br/&gt;`
+- **NEVER use HTML tags in node labels** - they render as literal escaped text
 - Use single-line labels only - multi-line text creates rendering issues
 
 ### Avoiding Line Clutter (CRITICAL)
@@ -228,7 +229,7 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
 **Line clutter** is the #1 diagram quality issue. Follow these rules:
 
 1. **Shorten ALL node labels**:
-   - BAD: `Authentication<br/>Successful?` or `Store Certificate in Local Machine Store`
+   - BAD: Long multi-word labels or labels with HTML tags
    - GOOD: `Auth OK?` or `Store Certificate`
    - Target: Under 20 characters per label
 
@@ -272,16 +273,12 @@ Beautiful-mermaid uses a 2-color foundation with automatic derivations:
 
 ## Common Anti-Patterns to AVOID
 
-### ❌ ANTI-PATTERN 1: Using `<br/>` Tags
-**NEVER use `<br/>` in node labels** - they render as literal `&lt;br/&gt;` text.
+### ❌ ANTI-PATTERN 1: Using HTML Tags in Labels
+**NEVER use HTML tags (like line break tags) in node labels** - they render as literal escaped text.
+Always use short, single-line labels instead.
 
 ```mermaid
-# ❌ WRONG - Will display "&lt;br/&gt;" literally
-flowchart TD
-    Auth{Authentication<br/>Successful?}
-    Store[Store Certificate in<br/>Local Machine Store]
-
-# ✅ CORRECT - Single line labels
+# ✅ CORRECT - Short single-line labels only
 flowchart TD
     Auth{Auth OK?}
     Store[Store Certificate]
@@ -329,7 +326,7 @@ Creates wide nodes and forces lines to cross.
 
 ### ✅ CORRECT PATTERN: Clean Flow
 - Short labels (< 20 chars)
-- No `<br/>` tags
+- No HTML tags in labels
 - Minimal loops
 - Direct paths
 - No redundant nodes
@@ -408,7 +405,7 @@ Before presenting diagram, verify ALL requirements are met:
 - [ ] **CRITICAL**: Setup script ran automatically on first use
 - [ ] **CRITICAL**: Used `template.html` as base (not recreated from scratch)
 - [ ] **CRITICAL**: Artifact uses ALL latest features from this skill
-- [ ] **CRITICAL**: NO `<br/>` tags in node labels (they render as literal text)
+- [ ] **CRITICAL**: NO HTML tags in node labels (they render as literal escaped text)
 - [ ] **CRITICAL**: All node labels are under 20 characters
 - [ ] **CRITICAL**: No redundant intermediate status nodes
 - [ ] **CRITICAL**: Feedback loops are short and minimal
@@ -449,8 +446,8 @@ Before presenting diagram, verify ALL requirements are met:
 - Verify no syntax errors in Mermaid code
 - Ensure SVG has proper CSS custom properties
 
-**Text shows `&lt;br/&gt;` literally:**
-- **NEVER use `<br/>` tags** in node labels
+**Text shows escaped HTML tags literally:**
+- **NEVER use HTML tags** in node labels
 - Use single-line labels only
 - Keep labels under 20 characters
 
@@ -490,7 +487,7 @@ Track improvements to ensure all artifacts stay current:
 - ✅ Complete template.html file (always use this)
 - ✅ Auto-setup on first use per session
 - ✅ **Anti-patterns section** with concrete examples
-- ✅ **Never use `<br/>` tags** - they render as literal text
+- ✅ **Never use HTML tags in labels** - they render as literal escaped text
 - ✅ **Line clutter avoidance** - short labels, minimal loops
 - ✅ **Quality checks for visual clarity** - no overlapping lines
 - ✅ Maximize button for full viewport (no permissions needed)
@@ -518,7 +515,7 @@ Track improvements to ensure all artifacts stay current:
 
 **v6 - Anti-Patterns & Quality**
 - Added comprehensive anti-patterns section
-- Explicit warning: NEVER use `<br/>` tags
+- Explicit warning: NEVER use HTML tags in labels
 - Line clutter avoidance guidelines
 - Visual quality checks in checklist
 - Concrete examples of good vs bad patterns
