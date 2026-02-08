@@ -13,7 +13,7 @@ jobs:
     outputs:
       skills: ${{ steps.find.outputs.skills }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 2
 
@@ -37,34 +37,53 @@ jobs:
       matrix:
         skill: ${{ fromJson(needs.detect-changes.outputs.skills) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Read skill metadata
         id: meta
+        env:
+          SKILL_DIR: ${{ matrix.skill }}
         run: |
-          version=$(grep '^version:' "${{ matrix.skill }}/SKILL.md" | head -1 | sed 's/version:[[:space:]]*//' | tr -d '"')
-          name=$(grep '^name:' "${{ matrix.skill }}/SKILL.md" | head -1 | sed 's/name:[[:space:]]*//' | tr -d '"')
+          version=$(grep '^version:' "$SKILL_DIR/SKILL.md" | head -1 | sed 's/version:[[:space:]]*//' | tr -d '"')
+          name=$(grep '^name:' "$SKILL_DIR/SKILL.md" | head -1 | sed 's/name:[[:space:]]*//' | tr -d '"')
+
+          # Validate format
+          if ! echo "$version" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "Error: Invalid version format: $version"
+            exit 1
+          fi
+          if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+            echo "Error: Invalid name format: $name"
+            exit 1
+          fi
+
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "name=$name" >> "$GITHUB_OUTPUT"
           echo "Releasing $name v$version"
 
       - name: Create zip
+        env:
+          SKILL_DIR: ${{ matrix.skill }}
+          SKILL_NAME: ${{ steps.meta.outputs.name }}
+          SKILL_VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          cd "${{ matrix.skill }}"
-          zip -r "../${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}.zip" .
+          cd "$SKILL_DIR"
+          zip -r "../${SKILL_NAME}-v${SKILL_VERSION}.zip" .
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SKILL_NAME: ${{ steps.meta.outputs.name }}
+          SKILL_VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          tag="${{ steps.meta.outputs.name }}/v${{ steps.meta.outputs.version }}"
-          zip_file="${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}.zip"
+          tag="${SKILL_NAME}/v${SKILL_VERSION}"
+          zip_file="${SKILL_NAME}-v${SKILL_VERSION}.zip"
 
           # Delete existing release/tag if re-releasing same version
           gh release delete "$tag" --yes 2>/dev/null || true
           git push origin ":refs/tags/$tag" 2>/dev/null || true
 
           gh release create "$tag" "$zip_file" \
-            --title "${{ steps.meta.outputs.name }} v${{ steps.meta.outputs.version }}" \
-            --notes "Release of **${{ steps.meta.outputs.name }}** skill package v${{ steps.meta.outputs.version }}." \
+            --title "${SKILL_NAME} v${SKILL_VERSION}" \
+            --notes "Release of **${SKILL_NAME}** skill package v${SKILL_VERSION}." \
             --latest
